@@ -1,8 +1,14 @@
+const mongoose = require('mongoose');
+const Document = require('./models/Document');
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { generateHash } = require('./utils/hash');
 const { issueOnChain, getHashFromChain } = require('./utils/xdc');
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.log(err));
 
 const app = express();
 app.use(cors());
@@ -29,6 +35,13 @@ app.post('/issue', upload.single('file'), async (req, res) => {
   const issuer = req.body.issuer || 'Unknown';
   
   const txHash = await issueOnChain(documentId, hash);
+
+  await Document.create({
+  documentId,
+  issuer,
+  fileName: req.file.originalname,
+  txHash
+});
   
   res.json({ documentId, hash, issuer, txHash });
 });
@@ -46,12 +59,19 @@ app.post('/verify', upload.single('file'), async (req, res) => {
     
     const uploadedHash = generateHash(req.file.buffer);
     const storedHash = await getHashFromChain(documentId);
+    const doc = await Document.findOne({ documentId });
     
-    if (uploadedHash === storedHash) {
-      res.json({ status: "valid", message: "Document is authentic" });
-    } else {
-      res.json({ status: "tampered", message: "Document has been modified" });
-    }
+    const response = {
+      status: uploadedHash === storedHash ? "valid" : "tampered",
+      message: uploadedHash === storedHash
+        ? "Document is authentic"
+        : "Document has been modified",
+      issuer: doc?.issuer || "Unknown",
+      txHash: doc?.txHash || null
+    };
+
+    res.json(response);
+    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
