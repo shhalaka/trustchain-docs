@@ -34,7 +34,9 @@ function App() {
       </button>
       
       <div className="header">
-        <h1>TrustChain Docs</h1>
+        <h1>
+          <span className="brand">⛓ TrustChain</span> Docs
+        </h1>
         <p>Tamper-proof document verification on XDC blockchain</p>
       </div>
 

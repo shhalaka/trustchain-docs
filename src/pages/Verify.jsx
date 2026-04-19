@@ -1,12 +1,33 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import axios from 'axios';
+
+const CopyIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </svg>
+);
 
 function Verify() {
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+    }
+  };
+
+  const handleDropZoneClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,16 +54,38 @@ function Verify() {
     }
   };
 
+  const shortenHash = (hash) => {
+    if (!hash) return '';
+    return hash.slice(0, 10) + '...' + hash.slice(-8);
+  };
+
   return (
     <div className="card">
       <h2>Verify Document</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Document File</label>
-          <input 
-            type="file" 
-            onChange={(e) => setFile(e.target.files[0])}
-          />
+          <div 
+            className="drop-zone"
+            onClick={handleDropZoneClick}
+          >
+            <input 
+              ref={fileInputRef}
+              type="file" 
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            <div className="drop-zone-content">
+              {fileName ? (
+                <span className="file-name">{fileName}</span>
+              ) : (
+                <>
+                  <span className="drop-zone-text">Click to select file</span>
+                  <span className="drop-zone-hint">or drag and drop</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
         <div className="form-group">
           <label>Document ID</label>
@@ -61,10 +104,40 @@ function Verify() {
 
       {result && (
         <div className={`result ${result.status}`}>
-          <h3>Result</h3>
-          <p style={{fontSize: '1.125rem', fontWeight: 600}}>
-            {result.message}
-          </p>
+          <div className="result-main">
+            <span className="result-icon">
+              {result.status === 'valid' ? '✓' : '⚠'}
+            </span>
+            <div className="result-content">
+              <h3 className="result-title">
+                {result.status === 'valid'
+                  ? 'Document is authentic'
+                  : 'Document has been modified'}
+              </h3>
+
+              <p className="result-meta">
+                Issuer: {result.issuer || 'Unknown'}
+              </p>
+
+              <p className="result-meta">
+                Verified at: {new Date().toLocaleString()}
+              </p>
+
+              {result.txHash && (
+                <div className="result-tx">
+                  <span className="result-tx-label">Transaction:</span>
+                  <a
+                    href={`https://explorer.apothem.network/txs/${result.txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="result-link"
+                  >
+                    {shortenHash(result.txHash)}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
