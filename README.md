@@ -151,7 +151,6 @@ Create a `.env` file in the `server/` directory:
 MONGO_URI=your_mongodb_connection_string
 PRIVATE_KEY=your_wallet_private_key
 CONTRACT_ADDRESS=your_deployed_contract_address
-PORT=5000
 ```
 
 > ⚠️ Never commit your `.env` file. It's already in `.gitignore`.
