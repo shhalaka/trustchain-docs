@@ -5,6 +5,7 @@ const documentSchema = new mongoose.Schema({
   issuer: String,
   fileName: String,
   txHash: String,
+  proof: String,
   createdAt: {
     type: Date,
     default: Date.now

@@ -16,6 +16,7 @@ function Verify() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+  const [zkMode, setZkMode] = useState(false);
 
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
@@ -96,6 +97,39 @@ function Verify() {
             onChange={(e) => setDocumentId(e.target.value)}
           />
         </div>
+        <div style={{ marginBottom: '10px' }}>
+          <button
+            type="button"
+            onClick={() => setZkMode(false)}
+            style={{
+              marginRight: '8px',
+              padding: '6px 10px',
+              background: !zkMode ? '#4f46e5' : '#e5e7eb',
+              color: !zkMode ? '#fff' : '#000',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Normal
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setZkMode(true)}
+            style={{
+              padding: '6px 10px',
+              background: zkMode ? '#4f46e5' : '#e5e7eb',
+              color: zkMode ? '#fff' : '#000',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+          }}
+        >
+          ZK Mode
+        </button>
+      </div>
+
         <button type="submit" className="submit-btn" disabled={loading}>
           {loading ? 'Verifying...' : 'Verify Document'}
         </button>
@@ -115,27 +149,41 @@ function Verify() {
                   : 'Document has been modified'}
               </h3>
 
-              <p className="result-meta">
-                Issuer: {result.issuer || 'Unknown'}
-              </p>
+              {zkMode ? (
+                <>
+                  <p style={{ color: '#6366f1', fontWeight: '500' }}>
+                    🔒 Verified using Zero-Knowledge Proof
+                  </p>
 
-              <p className="result-meta">
-                Verified at: {new Date().toLocaleString()}
-              </p>
+                  <p style={{ opacity: 0.6 }}>
+                    Sensitive details hidden
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="result-meta">
+                    Issuer: {result.issuer || 'Unknown'}
+                  </p>
 
-              {result.txHash && (
-                <div className="result-tx">
-                  <span className="result-tx-label">Transaction:</span>
-                  <a
-                    href={`https://explorer.apothem.network/txs/${result.txHash}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="result-link"
-                  >
-                    {shortenHash(result.txHash)}
-                  </a>
-                </div>
-              )}
+                  <p className="result-meta">
+                    Verified at: {new Date().toLocaleString()}
+                  </p>
+
+                  {result.txHash && (
+                    <div className="result-tx">
+                      <span className="result-tx-label">Transaction:</span>
+                      <a
+                        href={`https://explorer.apothem.network/txs/${result.txHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="result-link"
+                      >
+                        {shortenHash(result.txHash)}
+                      </a>
+                    </div>
+                  )}
+              </>
+            )}
             </div>
           </div>
         </div>

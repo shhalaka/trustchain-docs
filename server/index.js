@@ -33,17 +33,18 @@ app.post('/issue', upload.single('file'), async (req, res) => {
   const hash = generateHash(req.file.buffer);
   const documentId = `TC-${Date.now()}`;
   const issuer = req.body.issuer || 'Unknown';
-  
   const txHash = await issueOnChain(documentId, hash);
+  const proof = generateHash(Buffer.from(hash + 'zk-trustchain-secret'));
 
   await Document.create({
   documentId,
   issuer,
   fileName: req.file.originalname,
-  txHash
+  txHash,
+  proof
 });
   
-  res.json({ documentId, hash, issuer, txHash });
+  res.json({ documentId, hash, issuer, txHash, proof });
 });
 
 app.post('/verify', upload.single('file'), async (req, res) => {
@@ -61,13 +62,17 @@ app.post('/verify', upload.single('file'), async (req, res) => {
     const storedHash = await getHashFromChain(documentId);
     const doc = await Document.findOne({ documentId });
     
+    const recomputedProof = generateHash(Buffer.from(uploadedHash + 'zk-trustchain-secret'));
+    const zkValid = recomputedProof === doc?.proof;
+    
     const response = {
       status: uploadedHash === storedHash ? "valid" : "tampered",
       message: uploadedHash === storedHash
         ? "Document is authentic"
         : "Document has been modified",
       issuer: doc?.issuer || "Unknown",
-      txHash: doc?.txHash || null
+      txHash: doc?.txHash || null,
+      zkValid
     };
 
     res.json(response);
