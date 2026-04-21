@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const CopyIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -46,7 +47,7 @@ function Verify() {
       formData.append('file', file);
       formData.append('documentId', documentId);
 
-      const res = await axios.post('http://localhost:3000/verify', formData);
+      const res = await axios.post(`${API}/verify`, formData);
       setResult(res.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to verify document');

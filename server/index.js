@@ -11,7 +11,9 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.log(err));
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*', 
+}));
 app.use(express.json());
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,26 +28,32 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 app.post('/issue', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-  
-  const hash = generateHash(req.file.buffer);
-  const documentId = `TC-${Date.now()}`;
-  const issuer = req.body.issuer || 'Unknown';
-  const txHash = await issueOnChain(documentId, hash);
-  const proof = generateHash(Buffer.from(hash + 'zk-trustchain-secret'));
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
 
-  await Document.create({
-  documentId,
-  issuer,
-  fileName: req.file.originalname,
-  txHash,
-  proof
-});
-  
-  res.json({ documentId, hash, issuer, txHash, proof });
-});
+    const hash = generateHash(req.file.buffer);
+    const documentId = `TC-${Date.now()}`;
+    const issuer = req.body.issuer || 'Unknown';
+
+    const txHash = await issueOnChain(documentId, hash);
+    const proof = generateHash(Buffer.from(hash + 'zk-trustchain-secret'));
+
+    await Document.create({
+      documentId,
+      issuer,
+      fileName: req.file.originalname,
+      txHash,
+      proof
+    });
+
+    res.json({ documentId, hash, issuer, txHash, proof });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});  
 
 app.post('/verify', upload.single('file'), async (req, res) => {
   try {
@@ -59,8 +67,17 @@ app.post('/verify', upload.single('file'), async (req, res) => {
     }
     
     const uploadedHash = generateHash(req.file.buffer);
-    const storedHash = await getHashFromChain(documentId);
+    let storedHash = null;
+    try {
+      storedHash = await getHashFromChain(documentId);
+    } catch (err) {
+      console.log("Blockchain fetch failed:", err.message);
+    }
     const doc = await Document.findOne({ documentId });
+
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
     
     const recomputedProof = generateHash(Buffer.from(uploadedHash + 'zk-trustchain-secret'));
     const zkValid = recomputedProof === doc?.proof;
@@ -82,4 +99,14 @@ app.post('/verify', upload.single('file'), async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log('Server on port 3000'));
+app.get('/documents', async (req, res) => {
+  try {
+    const docs = await Document.find().sort({ createdAt: -1 });
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server on port ${PORT}`));

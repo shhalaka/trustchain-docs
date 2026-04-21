@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import Issue from './pages/Issue';
 import Verify from './pages/Verify';
+import History from './pages/History';
 
 function App() {
   const [page, setPage] = useState('issue');
@@ -53,9 +54,17 @@ function App() {
         >
           Verify Document
         </button>
+        <button 
+          className={page === 'history' ? 'active' : ''}
+          onClick={() => setPage('history')}
+        >
+          Issued Documents
+        </button>
       </div>
 
-      {page === 'issue' ? <Issue /> : <Verify />}
+      {page === 'issue' && <Issue />}
+      {page === 'verify' && <Verify />}
+      {page === 'history' && <History />}
     </div>
   );
 }
