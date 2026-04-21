@@ -3,10 +3,19 @@ import './App.css';
 import Issue from './pages/Issue';
 import Verify from './pages/Verify';
 import History from './pages/History';
+import Login from './pages/Login';
 
 function App() {
   const [page, setPage] = useState('issue');
   const [darkMode, setDarkMode] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem('token')
+  );
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setPage('issue'); 
+  };
 
   useEffect(() => {
     document.body.className = darkMode ? 'dark' : 'light';
@@ -60,11 +69,20 @@ function App() {
         >
           Issued Documents
         </button>
+        {isLoggedIn && (
+          <button onClick={handleLogout}>
+            Logout
+          </button>
+        )}
       </div>
 
       {page === 'issue' && <Issue />}
       {page === 'verify' && <Verify />}
-      {page === 'history' && <History />}
+      {page === 'history' && !isLoggedIn && (
+        <Login onLogin={() => setIsLoggedIn(true)} />
+      )}
+
+      {page === 'history' && isLoggedIn && <History />}
     </div>
   );
 }

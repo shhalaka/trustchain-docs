@@ -202,7 +202,8 @@ body.dark .form-group label {
 }
 
 .form-group input[type="file"],
-.form-group input[type="text"] {
+.form-group input[type="text"],
+.form-group input[type="password"]  {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #e2e8f0;
@@ -214,7 +215,8 @@ body.dark .form-group label {
 }
 
 body.dark .form-group input[type="file"],
-body.dark .form-group input[type="text"] {
+body.dark .form-group input[type="text"],
+body.dark .form-group input[type="password"] {
   background: rgba(15, 23, 42, 0.5);
   border-color: rgba(51, 65, 85, 0.6);
   color: #f8fafc;
@@ -575,4 +577,18 @@ body.dark .drop-zone-hint {
 
 body.dark .file-name {
   color: #f8fafc;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  button {
+    width: 100%;
+  }
 }

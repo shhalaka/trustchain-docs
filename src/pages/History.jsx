@@ -7,6 +7,7 @@ function History() {
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -21,7 +22,13 @@ function History() {
     const fetchDocs = async () => {
       try {
         const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const res = await axios.get(`${API}/documents`);
+        const token = localStorage.getItem('token');
+
+        const res = await axios.get(`${API}/documents`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         setDocs(res.data);
       } catch (err) {
         console.error(err);

@@ -1,8 +1,11 @@
+const express = require('express');
+
 const mongoose = require('mongoose');
 const Document = require('./models/Document');
-const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
+
 const { generateHash } = require('./utils/hash');
 const { issueOnChain, getHashFromChain } = require('./utils/xdc');
 
@@ -15,6 +18,44 @@ app.use(cors({
   origin: '*', 
 }));
 app.use(express.json());
+
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No token' });
+  }
+
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (
+    email === process.env.ADMIN_EMAIL &&
+    password === process.env.ADMIN_PASSWORD
+  ) {
+    const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, {
+      expiresIn: '2h'
+    });
+
+    return res.json({ token });
+  }
+
+  res.status(401).json({ error: 'Invalid credentials' });
+});
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -99,7 +140,7 @@ app.post('/verify', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/documents', async (req, res) => {
+app.get('/documents', authMiddleware, async (req, res) => {
   try {
     const docs = await Document.find().sort({ createdAt: -1 });
     res.json(docs);
